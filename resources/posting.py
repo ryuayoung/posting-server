@@ -52,6 +52,41 @@ class PostingListResource(Resource) :
         # rekogintion 서비스를 이용해서
         # object datection 하여, 태그 이름을 가져온다.
 
+        tag_list = self.detect_labels(new_file_name, Config.S3_BUCKET)
         
-        
-        return
+        print(tag_list)
+
+
+        # DB posting 테이블에 데이터를 넣어야 하고,
+        # tag_name 테이블과 tag 테이블에도 데이터를
+        # 넣어줘야 한다.
+    
+
+        def detect_labels(self, photo, bucket):
+
+            client = boto3.client('rekognition',
+                                'ap-northeast-2',
+                                aws_access_key_id=Config.AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=Config.AWS_SECRET_ACCESS_KEY)
+
+            response = client.detect_labels(Image={'S3Object':{'Bucket':bucket,'Name':photo}},
+            MaxLabels=5,
+            # Uncomment to use image properties and filtration settings
+            #Features=["GENERAL_LABELS", "IMAGE_PROPERTIES"],
+            #Settings={"GeneralLabels": {"LabelInclusionFilters":["Cat"]},
+            # "ImageProperties": {"MaxDominantColors":10}}
+            )
+
+            print('Detected labels for ' + photo)
+            print()
+
+            label_list = []
+            for label in response['Labels']:
+                print("Label: " + label['Name'])
+                print("Confidence: " + str(label['Confidence']))
+
+                if label['Confidence'] >= 90 :
+                    label_list.append(label['Name'])
+                
+
+            return label_list
